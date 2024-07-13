@@ -51,8 +51,8 @@ func salsaXOR(tmp *[16]uint32, in, out []uint32) {
 	w14 := tmp[14] ^ in[14]
 	w15 := tmp[15] ^ in[15]
 
-	x0, x1, x2, x3, x4, x5, x6, x7, x8 := w0, w1, w2, w3, w4, w5, w6, w7, w8
-	x9, x10, x11, x12, x13, x14, x15 := w9, w10, w11, w12, w13, w14, w15
+	x0, x5, x10, x15, x4, x9, x14, x3 := w0, w1, w2, w3, w4, w5, w6, w7
+	x8, x13, x2, x7, x12, x1, x6, x11 := w8, w9, w10, w11, w12, w13, w14, w15
 
 	for i := 0; i < 8; i += 2 {
 		x4 ^= bits.RotateLeft32(x0+x12, 7)
@@ -95,39 +95,39 @@ func salsaXOR(tmp *[16]uint32, in, out []uint32) {
 		x14 ^= bits.RotateLeft32(x13+x12, 13)
 		x15 ^= bits.RotateLeft32(x14+x13, 18)
 	}
-	x0 += w0
-	x1 += w1
-	x2 += w2
-	x3 += w3
-	x4 += w4
-	x5 += w5
-	x6 += w6
-	x7 += w7
-	x8 += w8
-	x9 += w9
-	x10 += w10
-	x11 += w11
-	x12 += w12
-	x13 += w13
-	x14 += w14
-	x15 += w15
+	w0 += x0
+	w1 += x5
+	w2 += x10
+	w3 += x15
+	w4 += x4
+	w5 += x9
+	w6 += x14
+	w7 += x3
+	w8 += x8
+	w9 += x13
+	w10 += x2
+	w11 += x7
+	w12 += x12
+	w13 += x1
+	w14 += x6
+	w15 += x11
 
-	out[0], tmp[0] = x0, x0
-	out[1], tmp[1] = x1, x1
-	out[2], tmp[2] = x2, x2
-	out[3], tmp[3] = x3, x3
-	out[4], tmp[4] = x4, x4
-	out[5], tmp[5] = x5, x5
-	out[6], tmp[6] = x6, x6
-	out[7], tmp[7] = x7, x7
-	out[8], tmp[8] = x8, x8
-	out[9], tmp[9] = x9, x9
-	out[10], tmp[10] = x10, x10
-	out[11], tmp[11] = x11, x11
-	out[12], tmp[12] = x12, x12
-	out[13], tmp[13] = x13, x13
-	out[14], tmp[14] = x14, x14
-	out[15], tmp[15] = x15, x15
+	out[0], tmp[0] = w0, w0
+	out[1], tmp[1] = w1, w1
+	out[2], tmp[2] = w2, w2
+	out[3], tmp[3] = w3, w3
+	out[4], tmp[4] = w4, w4
+	out[5], tmp[5] = w5, w5
+	out[6], tmp[6] = w6, w6
+	out[7], tmp[7] = w7, w7
+	out[8], tmp[8] = w8, w8
+	out[9], tmp[9] = w9, w9
+	out[10], tmp[10] = w10, w10
+	out[11], tmp[11] = w11, w11
+	out[12], tmp[12] = w12, w12
+	out[13], tmp[13] = w13, w13
+	out[14], tmp[14] = w14, w14
+	out[15], tmp[15] = w15, w15
 }
 
 func blockMix(tmp *[16]uint32, in, out []uint32, r int) {
@@ -140,7 +140,7 @@ func blockMix(tmp *[16]uint32, in, out []uint32, r int) {
 
 func integer(b []uint32, r int) uint64 {
 	j := (2*r - 1) * 16
-	return uint64(b[j]) | uint64(b[j+1])<<32
+	return uint64(b[j]) | uint64(b[j+13])<<32
 }
 
 func smix(b []byte, r, N int, v, xy []uint32) {
@@ -151,7 +151,7 @@ func smix(b []byte, r, N int, v, xy []uint32) {
 
 	j := 0
 	for i := 0; i < R; i++ {
-		x[i] = binary.LittleEndian.Uint32(b[j:])
+		x[i] = binary.LittleEndian.Uint32(b[(j & ^63)|((j*5)&63):])
 		j += 4
 	}
 	for i := 0; i < N; i += 2 {
@@ -172,7 +172,7 @@ func smix(b []byte, r, N int, v, xy []uint32) {
 	}
 	j = 0
 	for _, v := range x[:R] {
-		binary.LittleEndian.PutUint32(b[j:], v)
+		binary.LittleEndian.PutUint32(b[(j & ^63)|((j*5)&63):], v)
 		j += 4
 	}
 }
