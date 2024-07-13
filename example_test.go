@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package scrypt_test
+package yescrypt_test
 
 import (
 	"encoding/base64"
 	"fmt"
 	"log"
 
-	"golang.org/x/crypto/scrypt"
+	"github.com/openwall/yescrypt-go"
 )
 
 func Example() {
@@ -17,7 +17,7 @@ func Example() {
 	// a good length.
 	salt := []byte{0xc8, 0x28, 0xf2, 0x58, 0xa7, 0x6a, 0xad, 0x7b}
 
-	dk, err := scrypt.Key([]byte("some password"), salt, 1<<15, 8, 1, 32)
+	dk, err := yescrypt.Key([]byte("some password"), salt, 1<<15, 8, 1, 32)
 	if err != nil {
 		log.Fatal(err)
 	}

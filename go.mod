@@ -1,4 +1,4 @@
-module github.com/dchest/scrypt
+module github.com/openwall/yescrypt-go
 
 go 1.22.4
 

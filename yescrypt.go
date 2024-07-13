@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package scrypt implements the scrypt key derivation function as defined in
+// Package yescrypt implements the scrypt key derivation function as defined in
 // Colin Percival's paper "Stronger Key Derivation via Sequential Memory-Hard
 // Functions" (https://www.tarsnap.com/scrypt/scrypt.pdf).
-package scrypt
+package yescrypt
 
 import (
 	"crypto/sha256"
@@ -186,7 +186,7 @@ func smix(b []byte, r, N int, v, xy []uint32) {
 // For example, you can get a derived key for e.g. AES-256 (which needs a
 // 32-byte key) by doing:
 //
-//	dk, err := scrypt.Key([]byte("some password"), salt, 32768, 8, 1, 32)
+//	dk, err := yescrypt.Key([]byte("some password"), salt, 32768, 8, 1, 32)
 //
 // The recommended parameters for interactive logins as of 2017 are N=32768, r=8
 // and p=1. The parameters N, r, and p should be increased as memory latency and
