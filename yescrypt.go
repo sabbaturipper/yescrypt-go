@@ -1,4 +1,5 @@
 // Copyright 2012-2020 The Go Authors. All rights reserved.
+// Copyright 2024 Solar Designer. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -195,6 +196,12 @@ func smix(b []byte, r, N int, v, xy []uint32) {
 func Key(password, salt []byte, N, r, p, keyLen int) ([]byte, error) {
 	if N <= 1 || N&(N-1) != 0 {
 		return nil, errors.New("scrypt: N must be > 1 and a power of 2")
+	}
+	if r <= 0 {
+		return nil, errors.New("scrypt: r must be > 0")
+	}
+	if p <= 0 {
+		return nil, errors.New("scrypt: p must be > 0")
 	}
 	if uint64(r)*uint64(p) >= 1<<30 || r > maxInt/128/p || r > maxInt/256 || N > maxInt/128/r {
 		return nil, errors.New("scrypt: parameters are too large")
