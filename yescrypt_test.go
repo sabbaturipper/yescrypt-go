@@ -1,6 +1,10 @@
 // Copyright 2012-2017 The Go Authors. All rights reserved.
+// Copyright 2024 Solar Designer. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
+
+// yescrypt support sponsored by Sandfly Security https://sandflysecurity.com -
+// Agentless Security for Linux
 
 package yescrypt
 
@@ -126,6 +130,37 @@ var good = []testVector{
 			},
 		},
 	*/
+	{
+		"p",
+		"s",
+		16, 8, -1,
+		[]byte{
+			0xc8, 0xc7, 0xff, 0x11, 0x22, 0xb0, 0xb2, 0x91,
+			0xc3, 0xf2, 0x60, 0x89, 0x48, 0x78, 0x2c, 0xd6,
+			0x89, 0xcc, 0x45, 0x57, 0x90, 0x17, 0xaa, 0xa5,
+			0xff, 0x8b, 0xaa, 0x74, 0xa6, 0x32, 0xec, 0x99,
+		},
+	},
+	{
+		"p",
+		"s",
+		16, 8, -1,
+		[]byte{
+			0xc8, 0xc7, 0xff, 0x11, 0x22, 0xb0, 0xb2, 0x91,
+		},
+	},
+	{
+		"",
+		"",
+		4, 1, -1,
+		[]byte{
+			0x0c, 0xd5, 0xaf, 0x76, 0xeb, 0x24, 0x1d, 0xf8,
+			0x11, 0x9a, 0x9a, 0x12, 0x2a, 0xe3, 0x69, 0x20,
+			0xbc, 0xc7, 0xf4, 0x14, 0xb9, 0xc0, 0xd5, 0x8f,
+			0x45, 0x00, 0x80, 0x60, 0xda, 0xde, 0x46, 0xb0,
+			0xc8, 0x09, 0x22, 0xbd, 0xcc, 0x16, 0xa3, 0xab,
+		},
+	},
 }
 
 var bad = []testVector{
@@ -139,7 +174,12 @@ var bad = []testVector{
 
 func TestKey(t *testing.T) {
 	for i, v := range good {
-		k, err := Key([]byte(v.password), []byte(v.salt), v.N, v.r, v.p, len(v.output))
+		f := ScryptKey
+		if v.p < 0 { // Hack to indicate yescrypt
+			f = Key
+			v.p = -v.p
+		}
+		k, err := f([]byte(v.password), []byte(v.salt), v.N, v.r, v.p, len(v.output))
 		if err != nil {
 			t.Errorf("%d: got unexpected error: %s", i, err)
 		}
@@ -148,7 +188,11 @@ func TestKey(t *testing.T) {
 		}
 	}
 	for i, v := range bad {
-		_, err := Key([]byte(v.password), []byte(v.salt), v.N, v.r, v.p, 32)
+		_, err := ScryptKey([]byte(v.password), []byte(v.salt), v.N, v.r, v.p, 32)
+		if err == nil {
+			t.Errorf("%d: expected error, got nil", i)
+		}
+		_, err = Key([]byte(v.password), []byte(v.salt), v.N, v.r, v.p, 32)
 		if err == nil {
 			t.Errorf("%d: expected error, got nil", i)
 		}
@@ -157,8 +201,8 @@ func TestKey(t *testing.T) {
 
 var sink []byte
 
-func BenchmarkKey(b *testing.B) {
+func BenchmarkScryptKey(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		sink, _ = Key([]byte("password"), []byte("salt"), 1<<15, 8, 1, 64)
+		sink, _ = ScryptKey([]byte("password"), []byte("salt"), 1<<15, 8, 1, 64)
 	}
 }
