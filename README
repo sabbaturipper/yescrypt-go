@@ -1,5 +1,5 @@
-Go implementation of scrypt and yescrypt key derivation functions, which have
-their homepages at:
+Go implementation of scrypt and yescrypt key derivation and password hashing
+functions, which have their homepages at:
 https://www.tarsnap.com/scrypt.html
 https://www.openwall.com/yescrypt/
 
@@ -56,6 +56,13 @@ func Key(password, salt []byte, N, r, p, keyLen int) ([]byte, error)
     The set of parameters accepted by Key will likely change in future versions
     of this Go module to support more yescrypt functionality.
 
+func Hash(password, setting []byte) ([]byte, error)
+
+    Computes yescrypt hash encoding given the password and existing yescrypt
+    setting or full hash encoding.  The salt and other parameters are decoded
+    from setting.  Currently supports (only a little more than) the subset of
+    yescrypt parameters that libxcrypt can generate (as of libxcrypt 4.4.36).
+
 KEYWORDS
 
-    go, golang, scrypt, yescrypt, kdf
+    go, golang, scrypt, yescrypt, kdf, hash, password
