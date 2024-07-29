@@ -154,19 +154,17 @@ func pwxform(X *[PWXwords]uint64, ctx *pwxformCtx) {
 	for i := 0; i < PWXrounds; i++ {
 		for j := 0; j < PWXgather; j++ {
 			x := X[j*PWXsimple]
-			p0 := S0[(x&Smask)/8:]
-			p1 := S1[((x>>32)&Smask)/8:]
 			for k := 0; k < PWXsimple; k++ {
-				s0 := p0[k]
-				s1 := p1[k]
-				x = X[j*PWXsimple+k]
-				x = (x >> 32) * uint64(uint32(x))
-				x += s0
-				x ^= s1
-				X[j*PWXsimple+k] = x
+				s0 := S0[(x&Smask)/8+uint64(k)]
+				s1 := S1[((x>>32)&Smask)/8+uint64(k)]
+				y := X[j*PWXsimple+k]
+				y = (y >> 32) * uint64(uint32(y))
+				y += s0
+				y ^= s1
+				X[j*PWXsimple+k] = y
 
 				if i != 0 && i != PWXrounds-1 {
-					S2[w] = x
+					S2[w] = y
 					w++
 				}
 			}
