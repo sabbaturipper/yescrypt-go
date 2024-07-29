@@ -25,12 +25,12 @@ import (
 const maxInt = int(^uint(0) >> 1)
 
 // blockCopy copies n numbers from src into dst.
-func blockCopy(dst, src []uint32, n int) {
+func blockCopy(dst, src []uint64, n int) {
 	copy(dst, src[:n])
 }
 
 // blockXOR XORs numbers from dst with n numbers from src.
-func blockXOR(dst, src []uint32, n int) {
+func blockXOR(dst, src []uint64, n int) {
 	for i, v := range src[:n] {
 		dst[i] ^= v
 	}
@@ -38,26 +38,24 @@ func blockXOR(dst, src []uint32, n int) {
 
 // salsaXOR applies Salsa20/8 to the XOR of 16 numbers from tmp and in,
 // and puts the result into both tmp and out.
-func salsaXOR(tmp *[16]uint32, in, out []uint32, rounds int) {
-	w0 := tmp[0] ^ in[0]
-	w1 := tmp[1] ^ in[1]
-	w2 := tmp[2] ^ in[2]
-	w3 := tmp[3] ^ in[3]
-	w4 := tmp[4] ^ in[4]
-	w5 := tmp[5] ^ in[5]
-	w6 := tmp[6] ^ in[6]
-	w7 := tmp[7] ^ in[7]
-	w8 := tmp[8] ^ in[8]
-	w9 := tmp[9] ^ in[9]
-	w10 := tmp[10] ^ in[10]
-	w11 := tmp[11] ^ in[11]
-	w12 := tmp[12] ^ in[12]
-	w13 := tmp[13] ^ in[13]
-	w14 := tmp[14] ^ in[14]
-	w15 := tmp[15] ^ in[15]
+func salsaXOR(tmp *[8]uint64, in, out []uint64, rounds int) {
+	d0 := tmp[0] ^ in[0]
+	d1 := tmp[1] ^ in[1]
+	d2 := tmp[2] ^ in[2]
+	d3 := tmp[3] ^ in[3]
+	d4 := tmp[4] ^ in[4]
+	d5 := tmp[5] ^ in[5]
+	d6 := tmp[6] ^ in[6]
+	d7 := tmp[7] ^ in[7]
 
-	x0, x5, x10, x15, x4, x9, x14, x3 := w0, w1, w2, w3, w4, w5, w6, w7
-	x8, x13, x2, x7, x12, x1, x6, x11 := w8, w9, w10, w11, w12, w13, w14, w15
+	x0, x1 := uint32(d0), uint32(d6>>32)
+	x2, x3 := uint32(d5), uint32(d3>>32)
+	x4, x5 := uint32(d2), uint32(d0>>32)
+	x6, x7 := uint32(d7), uint32(d5>>32)
+	x8, x9 := uint32(d4), uint32(d2>>32)
+	x10, x11 := uint32(d1), uint32(d7>>32)
+	x12, x13 := uint32(d6), uint32(d4>>32)
+	x14, x15 := uint32(d3), uint32(d1>>32)
 
 	for i := 0; i < rounds; i += 2 {
 		x4 ^= bits.RotateLeft32(x0+x12, 7)
@@ -100,46 +98,31 @@ func salsaXOR(tmp *[16]uint32, in, out []uint32, rounds int) {
 		x14 ^= bits.RotateLeft32(x13+x12, 13)
 		x15 ^= bits.RotateLeft32(x14+x13, 18)
 	}
-	w0 += x0
-	w1 += x5
-	w2 += x10
-	w3 += x15
-	w4 += x4
-	w5 += x9
-	w6 += x14
-	w7 += x3
-	w8 += x8
-	w9 += x13
-	w10 += x2
-	w11 += x7
-	w12 += x12
-	w13 += x1
-	w14 += x6
-	w15 += x11
 
-	out[0], tmp[0] = w0, w0
-	out[1], tmp[1] = w1, w1
-	out[2], tmp[2] = w2, w2
-	out[3], tmp[3] = w3, w3
-	out[4], tmp[4] = w4, w4
-	out[5], tmp[5] = w5, w5
-	out[6], tmp[6] = w6, w6
-	out[7], tmp[7] = w7, w7
-	out[8], tmp[8] = w8, w8
-	out[9], tmp[9] = w9, w9
-	out[10], tmp[10] = w10, w10
-	out[11], tmp[11] = w11, w11
-	out[12], tmp[12] = w12, w12
-	out[13], tmp[13] = w13, w13
-	out[14], tmp[14] = w14, w14
-	out[15], tmp[15] = w15, w15
+	d0 = uint64(uint32(d0)+x0) | uint64(uint32(d0>>32)+x5)<<32
+	d1 = uint64(uint32(d1)+x10) | uint64(uint32(d1>>32)+x15)<<32
+	d2 = uint64(uint32(d2)+x4) | uint64(uint32(d2>>32)+x9)<<32
+	d3 = uint64(uint32(d3)+x14) | uint64(uint32(d3>>32)+x3)<<32
+	d4 = uint64(uint32(d4)+x8) | uint64(uint32(d4>>32)+x13)<<32
+	d5 = uint64(uint32(d5)+x2) | uint64(uint32(d5>>32)+x7)<<32
+	d6 = uint64(uint32(d6)+x12) | uint64(uint32(d6>>32)+x1)<<32
+	d7 = uint64(uint32(d7)+x6) | uint64(uint32(d7>>32)+x11)<<32
+
+	out[0], tmp[0] = d0, d0
+	out[1], tmp[1] = d1, d1
+	out[2], tmp[2] = d2, d2
+	out[3], tmp[3] = d3, d3
+	out[4], tmp[4] = d4, d4
+	out[5], tmp[5] = d5, d5
+	out[6], tmp[6] = d6, d6
+	out[7], tmp[7] = d7, d7
 }
 
-func blockMix(tmp *[16]uint32, in, out []uint32, r int) {
-	blockCopy(tmp[:], in[(2*r-1)*16:], 16)
+func blockMix(tmp *[8]uint64, in, out []uint64, r int) {
+	blockCopy(tmp[:], in[(2*r-1)*8:], 8)
 	for i := 0; i < 2*r; i += 2 {
-		salsaXOR(tmp, in[i*16:], out[i*8:], 8)
-		salsaXOR(tmp, in[i*16+16:], out[i*8+r*16:], 8)
+		salsaXOR(tmp, in[i*8:], out[i*4:], 8)
+		salsaXOR(tmp, in[i*8+8:], out[i*4+r*8:], 8)
 	}
 }
 
@@ -154,51 +137,47 @@ const (
 // Derived values.  These were never tunable on their own.
 const (
 	PWXbytes = PWXgather * PWXsimple * 8
-	PWXwords = PWXbytes / 4
+	PWXwords = PWXbytes / 8
 	Sbytes   = 3 * (1 << Swidth) * PWXsimple * 8
-	Swords   = Sbytes / 4
+	Swords   = Sbytes / 8
 	Smask    = (((1 << Swidth) - 1) * PWXsimple * 8)
 )
 
 type pwxformCtx struct {
-	S0, S1, S2 []uint32
+	S0, S1, S2 []uint64
 	w          uint32
 }
 
-func pwxform(X *[PWXwords]uint32, ctx *pwxformCtx) {
+func pwxform(X *[PWXwords]uint64, ctx *pwxformCtx) {
 	S0, S1, S2, w := ctx.S0, ctx.S1, ctx.S2, ctx.w
 
 	for i := 0; i < PWXrounds; i++ {
 		for j := 0; j < PWXgather; j++ {
-			xl := X[j*(PWXsimple*2)]
-			xh := X[j*(PWXsimple*2)+1]
-			p0 := S0[(xl&Smask)/4:]
-			p1 := S1[(xh&Smask)/4:]
-			for k := 0; k < PWXsimple*2; k += 2 {
-				s0 := uint64(p0[k]) | uint64(p0[k+1])<<32
-				s1 := uint64(p1[k]) | uint64(p1[k+1])<<32
-				xl = X[j*(PWXsimple*2)+k]
-				xh = X[j*(PWXsimple*2)+k+1]
-				x := uint64(xh) * uint64(xl)
+			x := X[j*PWXsimple]
+			p0 := S0[(x&Smask)/8:]
+			p1 := S1[((x>>32)&Smask)/8:]
+			for k := 0; k < PWXsimple; k++ {
+				s0 := p0[k]
+				s1 := p1[k]
+				x = X[j*PWXsimple+k]
+				x = (x >> 32) * uint64(uint32(x))
 				x += s0
 				x ^= s1
-				X[j*(PWXsimple*2)+k] = uint32(x)
-				X[j*(PWXsimple*2)+k+1] = uint32(x >> 32)
+				X[j*PWXsimple+k] = x
 
 				if i != 0 && i != PWXrounds-1 {
-					S2[w] = uint32(x)
-					S2[w+1] = uint32(x >> 32)
-					w += 2
+					S2[w] = x
+					w++
 				}
 			}
 		}
 	}
 
 	ctx.S0, ctx.S1, ctx.S2 = S2, S0, S1
-	ctx.w = w & ((1<<Swidth)*PWXsimple*2 - 1)
+	ctx.w = w & ((1<<Swidth)*PWXsimple - 1)
 }
 
-func blockMixPwxform(X *[PWXwords]uint32, B []uint32, r int, ctx *pwxformCtx) {
+func blockMixPwxform(X *[PWXwords]uint64, B []uint64, r int, ctx *pwxformCtx) {
 	r1 := 128 * r / PWXbytes
 	blockCopy(X[:], B[(r1-1)*PWXwords:], PWXwords)
 	for i := 0; i < r1; i++ {
@@ -207,13 +186,13 @@ func blockMixPwxform(X *[PWXwords]uint32, B []uint32, r int, ctx *pwxformCtx) {
 		blockCopy(B[i*PWXwords:], X[:], PWXwords)
 	}
 	i := (r1 - 1) * PWXbytes / 64
-	*X = [PWXwords]uint32{} // We don't need the XOR, so set X to zeroes
+	*X = [PWXwords]uint64{} // We don't need the XOR, so set X to zeroes
 	salsaXOR(X, B[i*PWXwords:], B[i*PWXwords:], 2)
 }
 
-func integer(b []uint32, r int) uint64 {
-	j := (2*r - 1) * 16
-	return uint64(b[j]) | uint64(b[j+13])<<32
+func integer(b []uint64, r int) uint64 {
+	j := (2*r - 1) * 8
+	return uint64(uint32(b[j]))
 }
 
 func p2floor(x uint64) uint64 {
@@ -228,16 +207,19 @@ func wrap(x, i uint64) uint64 {
 	return (x & (n - 1)) + (i - n)
 }
 
-func smix(b []byte, r, N, Nloop int, v, xy []uint32, ctx *pwxformCtx) {
-	var tmp [16]uint32
-	R := 32 * r
+func smix(b []byte, r, N, Nloop int, v, xy []uint64, ctx *pwxformCtx) {
+	var tmp [8]uint64
+	R := 16 * r
 	x := xy
 	y := xy[R:]
 
 	j := 0
 	for i := 0; i < R; i++ {
-		x[i] = binary.LittleEndian.Uint32(b[(j & ^63)|((j*5)&63):])
+		lo := binary.LittleEndian.Uint32(b[(j & ^63)|((j*5)&63):])
 		j += 4
+		hi := binary.LittleEndian.Uint32(b[(j & ^63)|((j*5)&63):])
+		j += 4
+		x[i] = uint64(lo) | uint64(hi)<<32
 	}
 	if ctx != nil {
 		for i := 0; i < N; i++ {
@@ -274,18 +256,20 @@ func smix(b []byte, r, N, Nloop int, v, xy []uint32, ctx *pwxformCtx) {
 	}
 	j = 0
 	for _, v := range x[:R] {
-		binary.LittleEndian.PutUint32(b[(j & ^63)|((j*5)&63):], v)
+		binary.LittleEndian.PutUint32(b[(j & ^63)|((j*5)&63):], uint32(v))
+		j += 4
+		binary.LittleEndian.PutUint32(b[(j & ^63)|((j*5)&63):], uint32(v>>32))
 		j += 4
 	}
 }
 
-func smixYescrypt(b []byte, r, N int, v, xy []uint32, passwordSha256 []byte) {
+func smixYescrypt(b []byte, r, N int, v, xy []uint64, passwordSha256 []byte) {
 	var ctx pwxformCtx
-	var S [Swords]uint32
+	var S [Swords]uint64
 	smix(b, 1, Sbytes/128, 0, S[:], xy, nil)
 	ctx.S2 = S[:]
-	ctx.S1 = S[(1<<Swidth)*PWXsimple*2:]
-	ctx.S0 = S[(1<<Swidth)*PWXsimple*2*2:]
+	ctx.S1 = S[(1<<Swidth)*PWXsimple:]
+	ctx.S0 = S[(1<<Swidth)*PWXsimple*2:]
 	h := hmac.New(sha256.New, b[64*(2*r-1):])
 	h.Write(passwordSha256)
 	copy(passwordSha256, h.Sum(nil))
@@ -313,18 +297,18 @@ func deriveKey(password, salt []byte, N, r, p, keyLen int, isYescrypt bool) ([]b
 	pass := 1
 	prehash := []byte("yescrypt-prehash")
 
-	v := make([]uint32, 32*N*r)
-	var xy []uint32
+	v := make([]uint64, 16*N*r)
+	var xy []uint64
 	var key []byte
 
 	if isYescrypt {
-		xy = make([]uint32, 32*max(r, 2))
+		xy = make([]uint64, 16*max(r, 2))
 		if N/p >= 0x100 && N/p*r >= 0x20000 {
 			pass = 0
 			N >>= 6
 		}
 	} else {
-		xy = make([]uint32, 64*r)
+		xy = make([]uint64, 32*r)
 	}
 
 	for pass <= 1 {
