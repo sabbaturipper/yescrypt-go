@@ -190,19 +190,19 @@ func blockMixPwxform(X *[PWXwords]uint64, B []uint64, r int, ctx *pwxformCtx) {
 	salsaXOR(X, B[i*PWXwords:], B[i*PWXwords:], 2)
 }
 
-func integer(b []uint64, r int) uint64 {
+func integer(b []uint64, r int) uint32 {
 	j := (2*r - 1) * 8
-	return uint64(uint32(b[j]))
+	return uint32(b[j])
 }
 
-func p2floor(x uint64) uint64 {
+func p2floor(x uint32) uint32 {
 	for x&(x-1) != 0 {
 		x &= x - 1
 	}
 	return x
 }
 
-func wrap(x, i uint64) uint64 {
+func wrap(x, i uint32) uint32 {
 	n := p2floor(i)
 	return (x & (n - 1)) + (i - n)
 }
@@ -225,13 +225,13 @@ func smix(b []byte, r, N, Nloop int, v, xy []uint64, ctx *pwxformCtx) {
 		for i := 0; i < N; i++ {
 			blockCopy(v[i*R:], x, R)
 			if i > 1 {
-				j := int(wrap(integer(x, r), uint64(i)))
+				j := int(wrap(integer(x, r), uint32(i)))
 				blockXOR(x, v[j*R:], R)
 			}
 			blockMixPwxform(&tmp, x, r, ctx)
 		}
 		for i := 0; i < Nloop; i++ {
-			j := int(integer(x, r) & uint64(N-1))
+			j := int(integer(x, r) & uint32(N-1))
 			blockXOR(x, v[j*R:], R)
 			blockCopy(v[j*R:], x, R)
 			blockMixPwxform(&tmp, x, r, ctx)
@@ -245,11 +245,11 @@ func smix(b []byte, r, N, Nloop int, v, xy []uint64, ctx *pwxformCtx) {
 			blockMix(&tmp, y, x, r)
 		}
 		for i := 0; i < Nloop; i += 2 {
-			j := int(integer(x, r) & uint64(N-1))
+			j := int(integer(x, r) & uint32(N-1))
 			blockXOR(x, v[j*R:], R)
 			blockMix(&tmp, x, y, r)
 
-			j = int(integer(y, r) & uint64(N-1))
+			j = int(integer(y, r) & uint32(N-1))
 			blockXOR(y, v[j*R:], R)
 			blockMix(&tmp, y, x, r)
 		}
