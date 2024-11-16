@@ -1,7 +1,7 @@
 Go implementation of scrypt and yescrypt key derivation and password hashing
 functions, which have their homepages at:
 https://www.tarsnap.com/scrypt.html
-https://www.openwall.com/yescrypt/
+https://www.openwall.com/yescrypt
 
 This Go implementation of scrypt was created in 2012 by Dmitry Chestnykh, who
 has since contributed it to the official Go x/crypto repository where it's now
